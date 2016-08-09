@@ -195,6 +195,17 @@ const NSInteger TRANSPARENT_NAVBAR_TAG = 78264803;
     viewController.navigationController.navigationBar.barTintColor = nil;
   }
   
+  // Draw under statusbar
+  self.edgesForExtendedLayout |= UIRectEdgeTop;
+  
+  // Frame extends to cover statusbar
+  CGRect statusBarFrame = [[UIApplication sharedApplication] statusBarFrame];
+  CGRect navigationBarExtendedFrame = CGRectMake(0, -1 * statusBarFrame.size.height, self.navigationController.navigationBar.frame.size.width, self.navigationController.navigationBar.frame.size.height + statusBarFrame.size.height);
+  
+  // Draw gradient
+  UIImage *gradientImage = [self getGradientImage:navigationBarExtendedFrame];
+  [viewController.navigationController.navigationBar setBackgroundImage:gradientImage forBarPosition:UIBarPositionTopAttached barMetrics:UIBarMetricsDefault];
+  
   NSString *navBarTextColor = self.navigatorStyle[@"navBarTextColor"];
   if (navBarTextColor)
   {
@@ -389,6 +400,23 @@ const NSInteger TRANSPARENT_NAVBAR_TAG = 78264803;
   }
   self.originalNavBarImages = originalNavBarImages;
   
+}
+
+-(UIImage *)getGradientImage:(CGRect)bounds{
+  CAGradientLayer *gradientLayer = [CAGradientLayer layer];
+  
+  gradientLayer.frame = bounds;
+  gradientLayer.colors = @[ (__bridge id)[UIColor colorWithRed:127/255.0 green:66/255.0 blue:142/255.0 alpha:1].CGColor,
+                            (__bridge id)[UIColor colorWithRed:223/255.0 green:45/255.0 blue:111/255.0 alpha:1].CGColor ];
+  gradientLayer.startPoint = CGPointMake(0.0, 0.25);
+  gradientLayer.endPoint = CGPointMake(1.0, 0.75);
+  
+  UIGraphicsBeginImageContext(gradientLayer.bounds.size);
+  [gradientLayer renderInContext:UIGraphicsGetCurrentContext()];
+  UIImage *gradientImage = UIGraphicsGetImageFromCurrentImageContext();
+  UIGraphicsEndImageContext();
+  
+  return gradientImage;
 }
 
 -(void)setStyleOnDisappear
