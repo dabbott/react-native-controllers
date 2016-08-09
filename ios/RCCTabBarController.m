@@ -74,15 +74,19 @@
     NSDictionary *childLayout = tabItemLayout[@"children"][0];
     UIViewController *viewController = [RCCViewController controllerWithLayout:childLayout globalProps:globalProps bridge:bridge];
     if (!viewController) continue;
-
+    
+    id tintOverride = tabItemLayout[@"props"][@"shouldTint"];
+    BOOL shouldTintIcon = tintOverride != (id)[NSNull null] ? [RCTConvert BOOL:tintOverride] : YES;
+    
     // create the tab icon and title
     NSString *title = tabItemLayout[@"props"][@"title"];
     UIImage *iconImage = nil;
     id icon = tabItemLayout[@"props"][@"icon"];
     if (icon)
     {
-      iconImage = [RCTConvert UIImage:icon];
-      if (buttonColor)
+      iconImage = [[RCTConvert UIImage:icon] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+      
+      if (buttonColor && shouldTintIcon)
       {
         iconImage = [[self image:iconImage withColor:buttonColor] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
       }
@@ -93,7 +97,25 @@
 
     viewController.tabBarItem = [[UITabBarItem alloc] initWithTitle:title image:iconImage tag:0];
     viewController.tabBarItem.accessibilityIdentifier = tabItemLayout[@"props"][@"testID"];
-    viewController.tabBarItem.selectedImage = iconImageSelected;
+    
+    if (shouldTintIcon)
+    {
+      viewController.tabBarItem.selectedImage = iconImageSelected;
+    }
+    else {
+      viewController.tabBarItem.selectedImage = [iconImageSelected imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+    }
+    
+    id position = tabItemLayout[@"props"][@"position"];
+    if (position) {
+      id xId = position[@"x"];
+      id yId = position[@"y"];
+      
+      NSInteger x = [RCTConvert NSInteger:xId];
+      NSInteger y = [RCTConvert NSInteger:yId];
+      
+      viewController.tabBarItem.imageInsets = UIEdgeInsetsMake(y, x, -y, -x);
+    }
     
     if (buttonColor)
     {
