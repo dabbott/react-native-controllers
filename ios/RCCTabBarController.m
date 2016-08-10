@@ -2,6 +2,10 @@
 #import "RCCViewController.h"
 #import "RCTConvert.h"
 #import "RCCManager.h"
+#import "RCTEventDispatcher.h"
+
+NSString const *TAB_CALLBACK_ASSOCIATED_KEY = @"RCCTabBarController.CALLBACK_ASSOCIATED_KEY";
+NSString const *TAB_CALLBACK_ASSOCIATED_ID = @"RCCTabBarController.CALLBACK_ASSOCIATED_ID";
 
 @implementation RCCTabBarController
 
@@ -21,10 +25,32 @@
   return newImage;
 }
 
+-(BOOL)tabBarController:(UITabBarController *)tabBarController shouldSelectViewController:viewController
+{
+  RCCViewController *vc = viewController;
+  
+  NSString *callbackId = objc_getAssociatedObject(vc, &TAB_CALLBACK_ASSOCIATED_KEY);
+  
+  if (callbackId) {
+    NSString *buttonId = objc_getAssociatedObject(vc, &TAB_CALLBACK_ASSOCIATED_ID);
+    [[[RCCManager sharedInstance] getBridge].eventDispatcher sendAppEventWithName:callbackId body:@
+     {
+       @"type": @"TabBarButtonPress",
+       @"id": buttonId ? buttonId : [NSNull null]
+     }];
+    
+    return NO;
+  }
+  
+  return YES;
+}
+
 - (instancetype)initWithProps:(NSDictionary *)props children:(NSArray *)children globalProps:(NSDictionary*)globalProps bridge:(RCTBridge *)bridge
 {
   self = [super init];
   if (!self) return nil;
+  
+  self.delegate = self;
   
   self.tabBar.translucent = YES; // default
   
@@ -141,6 +167,19 @@
     }
 
     [viewControllers addObject:viewController];
+    
+    NSArray *buttons = tabItemLayout[@"props"][@"buttons"];
+    if (buttons) {
+      NSDictionary *button = buttons[0];
+      
+      objc_setAssociatedObject(viewController, &TAB_CALLBACK_ASSOCIATED_KEY, button[@"onPress"], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+      
+      NSString *buttonId = button[@"id"];
+      if (buttonId)
+      {
+        objc_setAssociatedObject(viewController, &TAB_CALLBACK_ASSOCIATED_ID, buttonId, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+      }
+    }
   }
 
   // replace the tabs
