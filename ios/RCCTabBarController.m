@@ -39,7 +39,9 @@ NSString const *TAB_CALLBACK_ASSOCIATED_ID = @"RCCTabBarController.CALLBACK_ASSO
        @"id": buttonId ? buttonId : [NSNull null]
      }];
     
-    return NO;
+    if ([@"preventDefault" isEqualToString:buttonId]) {
+      return NO;
+    }
   }
   
   return YES;
